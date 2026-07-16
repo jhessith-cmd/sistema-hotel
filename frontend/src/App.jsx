@@ -1,7 +1,25 @@
 import {useEffect,useState} from 'react';
 import {BedDouble,BookOpen,LayoutDashboard,Menu,Plus,Users,WalletCards,X} from 'lucide-react';
-const api=async(path,options={})=>{const r=await fetch(`/api${path}`,{headers:{'Content-Type':'application/json'},...options});const data=await r.json();if(!r.ok)throw new Error(data.mensaje||'Error');return data};
-const money=n=>new Intl.NumberFormat('es-BO',{style:'currency',currency:'BOB'}).format(n||0);
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:4000/api";
+
+const api = async (path, options = {}) => {
+  const response = await fetch(`${API_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+    ...options,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.mensaje || "Error");
+  }
+
+  return data;
+};const money=n=>new Intl.NumberFormat('es-BO',{style:'currency',currency:'BOB'}).format(n||0);
 
 export default function App(){
  const[page,setPage]=useState('dashboard'),[open,setOpen]=useState(false),[dash,setDash]=useState({}),[rooms,setRooms]=useState([]),[guests,setGuests]=useState([]),[bookings,setBookings]=useState([]),[modal,setModal]=useState(null),[msg,setMsg]=useState('');
