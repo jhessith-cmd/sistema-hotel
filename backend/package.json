@@ -13,11 +13,10 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
-    "express": "^5.0.0"
+    "express": "^5.0.0",
+    "googleapis": "^173.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
   }
-
 }
-
