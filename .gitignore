@@ -1,0 +1,23 @@
+# Dependencias
+backend/node_modules/
+frontend/node_modules/
+
+# Variables de entorno
+backend/.env
+frontend/.env
+
+# Credenciales
+backend/credentials/
+*.json
+
+# Compilación
+frontend/dist/
+dist/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

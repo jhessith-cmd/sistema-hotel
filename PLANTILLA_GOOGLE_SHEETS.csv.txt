@@ -1,0 +1,8 @@
+Pestaña: Habitaciones
+ID_Habitacion,Numero,Tipo,Capacidad,Precio,Estado,Piso,Observaciones
+
+Pestaña: Huespedes
+ID_Huesped,Nombre,Documento,Telefono,Correo,Nacionalidad
+
+Pestaña: Reservas
+ID_Reserva,ID_Huesped,ID_Habitacion,Entrada,Salida,Personas,Estado,Total,Pagado
