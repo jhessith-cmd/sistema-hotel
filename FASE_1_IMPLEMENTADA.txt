@@ -1,0 +1,19 @@
+FASE 1 IMPLEMENTADA
+
+1. Calendario mensual multi-hospedaje.
+2. Indicadores: ocupadas, reservadas, ingresos de hoy y próximos ingresos.
+3. Filtros por hospedaje y vista de todos.
+4. Botones para mes anterior, mes siguiente y Hoy.
+5. Nuevo registro dividido en dos opciones grandes:
+   - Reservar para después.
+   - Ingresar ahora.
+6. Reservas con búsqueda y filtros.
+7. Detalle dinámico para reservada u ocupada.
+8. Administración de hospedajes y habitaciones.
+9. Diseño adaptable y profesional.
+
+SIGUIENTE FASE
+- Historial detallado de pagos.
+- Confirmación de salida con cobro final.
+- Módulo operativo de limpieza.
+- Reportes por hospedaje, semana, mes y año.

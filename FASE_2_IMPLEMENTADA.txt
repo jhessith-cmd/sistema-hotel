@@ -1,0 +1,37 @@
+HOTELCONTROL - FASE 2 IMPLEMENTADA
+
+Nuevas funciones:
+1. Pagos completos
+   - Resumen total cobrado, saldo pendiente y cantidad de pagos.
+   - Listado de saldos pendientes por huésped y habitación.
+   - Historial de últimos pagos con fecha, método y concepto.
+   - Pagos parciales y pago final desde el detalle de la estadía.
+
+2. Salida / check-out
+   - Registro de fecha de salida.
+   - Cobro del saldo final.
+   - Cambio automático de la reserva a Finalizada.
+   - Cambio automático de la habitación a Limpieza.
+   - Creación automática de tarea de limpieza.
+
+3. Control de limpieza
+   - Nueva pantalla Limpieza.
+   - Lista de habitaciones pendientes.
+   - Botón Iniciar limpieza.
+   - Botón Finalizar limpieza.
+   - Al finalizar, la habitación vuelve a Disponible.
+   - Acceso para Administrador, Recepcionista y Limpieza.
+
+4. Registro y reportes
+   - Filtros por Semana, Mes y Año.
+   - Buscador por huésped, hospedaje o habitación.
+   - Totales según el período seleccionado.
+   - Exportación CSV compatible con Excel.
+   - Impresión / guardado en PDF.
+
+IMPORTANTE:
+- Copiar google-apps-script/Codigo.gs en Apps Script.
+- Ejecutar setupHojas.
+- Publicar una nueva versión de la implementación.
+- Reemplazar backend y frontend en GitHub.
+- Redesplegar Render y Vercel sin caché.

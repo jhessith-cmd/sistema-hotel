@@ -44,6 +44,7 @@ function doPost(e){
       const out=crear('Reservas',r);actualizarEstadoHabitacion(d.ID_Habitacion,ocupada?'Ocupada':'Reservada');if(adelanto>0)crearPagoInterno(r.ID_Reserva,adelanto,'Efectivo','Adelanto',d.Usuario_Registro);return out;
     }
     if(body.accion==='accionReserva')return accionReserva(d);
+    if(body.accion==='accionLimpieza')return accionLimpieza(d);
     if(body.accion==='crearPago')return crearPagoInterno(d.ID_Reserva,d.Monto,d.Metodo_Pago,d.Concepto||'Pago de hospedaje',d.Usuario_Registro,d.Observaciones||'');
     return json({ok:false,mensaje:'Acción no reconocida'});
   }catch(error){return json({ok:false,mensaje:error.message});}
@@ -67,9 +68,29 @@ function accionReserva(d){
   if(d.Accion==='salida'){
     const saldo=Number(reserva.Saldo||0);if(saldo>0&&Number(d.Monto||0)>0)crearPagoInterno(d.ID_Reserva,Number(d.Monto),d.Metodo_Pago||'Efectivo','Pago final',d.Usuario_Registro,d.Observaciones);
     const actualizado=buscarPorId('Reservas','ID_Reserva',d.ID_Reserva);const pagoFinal=Number(actualizado.Pagado||actualizado.Adelanto||0)+Math.max(0,Number(d.Monto||0));
-    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Finalizada',Fecha_Salida_Real:d.Fecha||fechaHoy(),Pagado:pagoFinal,Saldo:0});actualizarEstadoHabitacion(reserva.ID_Habitacion,'Limpieza');auditar(d.Usuario_Registro,'Registrar salida','Reservas',d.ID_Reserva);return json({ok:true,mensaje:'Salida registrada; habitación en limpieza'});
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Finalizada',Fecha_Salida_Real:d.Fecha||fechaHoy(),Pagado:pagoFinal,Saldo:0});actualizarEstadoHabitacion(reserva.ID_Habitacion,'Limpieza');crearLimpiezaPendiente(reserva.ID_Habitacion,d.Usuario_Registro,d.Observaciones);auditar(d.Usuario_Registro,'Registrar salida','Reservas',d.ID_Reserva);return json({ok:true,mensaje:'Salida registrada; habitación en limpieza'});
   }
   throw new Error('Acción no reconocida');
+}
+
+
+function crearLimpiezaPendiente(idHabitacion,responsable,obs){
+  const existente=obtenerRegistros('Limpieza').find(x=>x.ID_Habitacion===idHabitacion&&!['Finalizada','Cancelada'].includes(x.Estado));
+  if(existente)return existente;
+  const reg={ID_Limpieza:generarId('LIM','Limpieza'),ID_Habitacion:idHabitacion,Fecha:fechaHoy(),Responsable:responsable||'',Hora_Inicio:'',Hora_Finalizacion:'',Estado:'Pendiente',Observaciones:obs||'',Foto_URL:''};
+  agregarRegistro('Limpieza',reg);return reg;
+}
+function accionLimpieza(d){
+  const item=buscarPorId('Limpieza','ID_Limpieza',d.ID_Limpieza);if(!item)throw new Error('Registro de limpieza no encontrado');
+  if(d.Accion==='iniciar'){
+    actualizarPorId('Limpieza','ID_Limpieza',d.ID_Limpieza,{Responsable:d.Responsable||item.Responsable,Hora_Inicio:horaActual(),Estado:'En proceso',Observaciones:combinarObs(item.Observaciones,d.Observaciones)});
+    actualizarEstadoHabitacion(item.ID_Habitacion,'Limpieza');auditar(d.Usuario_Registro,'Iniciar limpieza','Limpieza',d.ID_Limpieza);return json({ok:true,mensaje:'Limpieza iniciada'});
+  }
+  if(d.Accion==='finalizar'){
+    actualizarPorId('Limpieza','ID_Limpieza',d.ID_Limpieza,{Responsable:d.Responsable||item.Responsable,Hora_Finalizacion:horaActual(),Estado:'Finalizada',Observaciones:combinarObs(item.Observaciones,d.Observaciones)});
+    actualizarEstadoHabitacion(item.ID_Habitacion,'Disponible');auditar(d.Usuario_Registro,'Finalizar limpieza','Limpieza',d.ID_Limpieza);return json({ok:true,mensaje:'Limpieza finalizada; habitación disponible'});
+  }
+  throw new Error('Acción de limpieza no reconocida');
 }
 
 function crearPagoInterno(id,monto,metodo,concepto,usuario,obs){const reg={ID_Pago:generarId('PAG','Pagos'),ID_Reserva:id,Fecha_Pago:fechaHoy(),Monto:Number(monto||0),Metodo_Pago:metodo||'Efectivo',Numero_Comprobante:'',Concepto:concepto||'Pago',Estado:'Confirmado',Observaciones:obs||'',Usuario_Registro:usuario||'Sistema'};agregarRegistro('Pagos',reg);return json({ok:true,datos:reg});}

@@ -56,6 +56,17 @@ router.post('/reservas', writeHotel, async(req,res,next)=>{
 });
 router.post('/reservas/:id/accion', writeHotel, async(req,res,next)=>{try{res.json(await appScriptPost('accionReserva',{ID_Reserva:req.params.id,Accion:req.body.accion,Monto:n(req.body.monto),Metodo_Pago:req.body.metodoPago||'',Fecha:req.body.fecha||'',Hora:req.body.hora||'',Observaciones:req.body.observaciones||'',Fecha_Salida:req.body.salida||'',Total:req.body.total===''?undefined:n(req.body.total),ID_Habitacion:req.body.habitacionId||'',Cantidad_Personas:req.body.personas? n(req.body.personas):undefined,Usuario_Registro:req.user.sub}))}catch(e){next(e)}});
 
+
+router.get('/limpieza', async (_req,res,next)=>{try{
+  const [items,habitaciones,hospedajes]=await Promise.all([appScriptGet('limpieza'),appScriptGet('habitaciones'),appScriptGet('hospedajes')]);
+  const roomMap=Object.fromEntries(habitaciones.map(x=>[x.ID_Habitacion,x]));
+  const hotelMap=Object.fromEntries(hospedajes.map(x=>[x.ID_Hospedaje,x.Nombre]));
+  res.json(items.map(x=>({id:x.ID_Limpieza,habitacionId:x.ID_Habitacion,habitacion:roomMap[x.ID_Habitacion]?.Numero||'',hospedaje:hotelMap[roomMap[x.ID_Habitacion]?.ID_Hospedaje]||'',fecha:x.Fecha,responsable:x.Responsable||'',inicio:x.Hora_Inicio||'',fin:x.Hora_Finalizacion||'',estado:x.Estado||'Pendiente',observaciones:x.Observaciones||''})));
+}catch(e){next(e)}});
+router.post('/limpieza/:id/accion', allowRoles('Administrador','Recepcionista','Limpieza'), async(req,res,next)=>{try{
+  res.json(await appScriptPost('accionLimpieza',{ID_Limpieza:req.params.id,Accion:req.body.accion,Responsable:req.body.responsable||req.user.nombre||req.user.sub,Observaciones:req.body.observaciones||'',Usuario_Registro:req.user.sub}));
+}catch(e){next(e)}});
+
 router.get('/pagos', async (_req,res,next)=>{try{res.json((await appScriptGet('pagos')).map(p=>({id:p.ID_Pago,reservaId:p.ID_Reserva,fecha:p.Fecha_Pago,monto:n(p.Monto),metodo:p.Metodo_Pago,concepto:p.Concepto,estado:p.Estado}))) }catch(e){next(e)}});
 
 router.get('/registro', async (_req,res,next)=>{try{

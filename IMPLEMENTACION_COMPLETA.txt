@@ -1,0 +1,23 @@
+HOTELCONTROL - IMPLEMENTACION COMPLETA
+
+Incluye:
+- Login seguro con JWT, bcrypt, roles y rutas protegidas.
+- Configuración inicial del administrador.
+- Gestión de usuarios.
+- Gestión de uno o varios hospedajes.
+- Alta, edición, activación y desactivación de hospedajes.
+- Alta, edición, activación y desactivación de habitaciones.
+- Calendario mensual por hospedaje o consolidado.
+- Estados visuales: libre, reservada, ocupada, limpieza y mantenimiento.
+- Reservar para después e ingresar ahora.
+- Búsqueda y filtros de reservas.
+- Check-in, edición, cancelación y check-out.
+- Pagos parciales y finales, historial y saldos pendientes.
+- Cambio automático a limpieza al finalizar una estadía.
+- Gestión de limpieza e retorno a disponible.
+- Registro histórico y reportes semanales, mensuales y anuales.
+- Exportación compatible con Excel e impresión/PDF.
+- Frontend React/Vite, backend Node/Express y Google Apps Script.
+- Configuración para Render y Vercel.
+
+Use README.md y PASOS_PARA_ACTUALIZAR.txt para la instalación.
