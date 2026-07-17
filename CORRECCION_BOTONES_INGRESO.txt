@@ -1,0 +1,9 @@
+CORRECCIÓN IMPLEMENTADA
+
+- Se reconoce Reservada, Confirmada y Pendiente como reservas habilitadas para Registrar entrada.
+- Se reconoce Ocupada y En curso como estadías activas.
+- Los botones ahora tienen fondo, contraste e iconos visibles en celular.
+- Registrar entrada aparece solo en reservas aún no ingresadas.
+- Registrar salida aparece solo cuando la estadía ya está ocupada.
+- El saldo se recalcula como Total - Pagado para evitar mostrar Bs 0 cuando todavía existe deuda.
+- El estado vacío se reconstruye como Ocupada si existe fecha real de ingreso; en caso contrario, Reservada.

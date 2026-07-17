@@ -25,7 +25,7 @@ router.get('/dashboard', async (_req,res,next)=>{
       fueraServicio:rooms.filter(x=>x.Estado==='Fuera de servicio').length,
       reservasActivas:active.length,
       ingresos:pagos.filter(p=>p.Estado!=='Anulado').reduce((s,p)=>s+n(p.Monto),0),
-      pendiente:reservas.filter(r=>!['Cancelada','Finalizada'].includes(r.Estado)).reduce((s,r)=>s+n(r.Saldo),0)
+      pendiente:reservas.filter(r=>!['Cancelada','Finalizada'].includes(String(r.Estado||'').trim())).reduce((s,r)=>s+Math.max(0,n(r.Total)-n(r.Pagado||r.Adelanto)),0)
     });
   }catch(e){next(e)}
 });
@@ -42,7 +42,7 @@ router.post('/habitaciones/:id/estado', allowRoles('Administrador','Recepcionist
 router.get('/huespedes', async (_req,res,next)=>{try{res.json((await appScriptGet('huespedes')).map(r=>({id:r.ID_Huesped,nombre:[r.Nombres,r.Apellidos].filter(Boolean).join(' '),documento:r.Documento,telefono:r.Telefono,correo:r.Correo,nacionalidad:r.Nacionalidad})))}catch(e){next(e)}});
 router.post('/huespedes', writeHotel, async(req,res,next)=>{try{const parts=String(req.body.nombre||'').trim().split(/\s+/);res.status(201).json(await appScriptPost('crearHuesped',{Nombres:parts.shift()||'',Apellidos:parts.join(' '),Documento:req.body.documento||'',Telefono:req.body.telefono||'',Correo:req.body.correo||'',Nacionalidad:req.body.nacionalidad||'Boliviana'}))}catch(e){next(e)}});
 
-router.get('/reservas', async (_req,res,next)=>{try{res.json((await appScriptGet('reservas')).map(r=>({id:r.ID_Reserva,huespedId:r.ID_Huesped,habitacionId:r.ID_Habitacion,entrada:r.Fecha_Entrada,salida:r.Fecha_Salida,personas:n(r.Cantidad_Personas),precio:n(r.Total),pagado:n(r.Pagado||r.Adelanto),saldo:n(r.Saldo),estado:r.Estado,observaciones:r.Observaciones||'',fechaIngresoReal:r.Fecha_Ingreso_Real||'',horaIngreso:r.Hora_Ingreso||'',fechaSalidaReal:r.Fecha_Salida_Real||''})))}catch(e){next(e)}});
+router.get('/reservas', async (_req,res,next)=>{try{res.json((await appScriptGet('reservas')).map(r=>{const precio=n(r.Total),pagado=n(r.Pagado||r.Adelanto);const estado=String(r.Estado||(r.Fecha_Ingreso_Real?'Ocupada':'Confirmada')).trim();return {id:r.ID_Reserva,huespedId:r.ID_Huesped,habitacionId:r.ID_Habitacion,entrada:r.Fecha_Entrada,salida:r.Fecha_Salida,personas:n(r.Cantidad_Personas),precio,pagado,saldo:Math.max(0,precio-pagado),estado,observaciones:r.Observaciones||'',fechaIngresoReal:r.Fecha_Ingreso_Real||'',horaIngreso:r.Hora_Ingreso||'',fechaSalidaReal:r.Fecha_Salida_Real||''}}))}catch(e){next(e)}});
 router.post('/reservas', writeHotel, async(req,res,next)=>{
   try{
     const b=req.body;
