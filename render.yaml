@@ -3,7 +3,7 @@ services:
     name: hotelcontrol-api
     runtime: node
     rootDir: backend
-    buildCommand: yarn install --frozen-lockfile
+    buildCommand: yarn install --frozen-lockfile --network-timeout 600000
     startCommand: yarn start
     healthCheckPath: /api/health
     envVars:

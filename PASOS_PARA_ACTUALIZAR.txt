@@ -1,0 +1,34 @@
+HOTELCONTROL - ACTUALIZACIÓN COMPLETA
+
+1. Haga una copia de su proyecto actual.
+2. Reemplace las carpetas backend, frontend y google-apps-script con las de este ZIP.
+3. No copie ni publique archivos .env reales.
+4. En backend, use Yarn:
+   yarn install --frozen-lockfile
+   yarn start
+5. Suba todo a GitHub:
+   git add -A
+   git commit -m "Instalar HotelControl profesional con login"
+   git push origin main
+6. En Render:
+   Root Directory: backend
+   Build Command: yarn install --frozen-lockfile --network-timeout 600000
+   Start Command: yarn start
+   Variables requeridas:
+   DATA_MODE=apps-script
+   APPS_SCRIPT_URL=URL_TERMINADA_EN_EXEC
+   APPS_SCRIPT_TOKEN=MISMO_TOKEN_DE_CODIGO_GS
+   JWT_SECRET=CLAVE_LARGA_PRIVADA
+   JWT_EXPIRES_IN=8h
+   SETUP_KEY=CLAVE_PRIVADA_PARA_PRIMER_ADMIN
+   FRONTEND_URL=https://sistema-hotel-pi.vercel.app
+7. En Vercel:
+   Root Directory: frontend
+   Framework: Vite
+   Build Command: npm run build
+   Output Directory: dist
+   Variable:
+   VITE_API_URL=https://sistema-hotel-s5pl.onrender.com/api
+8. Redespliegue Render y Vercel sin caché.
+9. En Google Apps Script, copie google-apps-script/Codigo.gs, ejecute setupHojas y publique una nueva versión.
+10. Abra la web en incógnito. Debe aparecer Configuración inicial o Inicio de sesión, nunca "Sesión local".

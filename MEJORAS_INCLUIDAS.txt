@@ -1,0 +1,62 @@
+HOTELCONTROL 3.0 - GESTIÓN DE HOSPEDAJE
+
+Esta versión amplía el sistema tomando como referencia el documento proporcionado:
+
+1. Calendario mensual de habitaciones
+- Filtrado por hospedaje.
+- Desplazamiento horizontal hasta el último día del mes.
+- Primera fila y primera columna fijas.
+- Verde: libre; amarillo: reservada; rojo: ocupada; gris: limpieza/mantenimiento.
+- Iniciales del huésped dentro de cada casilla.
+- Apertura del detalle al tocar una reserva.
+
+2. Nuevo registro
+- Reservar para después.
+- Ingresar ahora.
+- Datos de huésped, habitación, personas, fechas, precio, pago inicial y observaciones.
+
+3. Gestión de reservas
+- Buscador por nombre o habitación.
+- Filtros reservadas/ocupadas.
+- Detalle con teléfono y acceso a WhatsApp.
+- Registrar entrada, editar, cancelar.
+- Registrar pago, editar estadía y registrar salida.
+
+4. Cobros y salidas
+- Registro de pagos en efectivo, QR o transferencia.
+- Cálculo de pagado y saldo pendiente.
+- Al finalizar, la habitación pasa a Limpieza.
+
+5. Registro e informes
+- Historial de estadías finalizadas.
+- Total cobrado y cantidad de huéspedes.
+- Impresión / guardado en PDF.
+- Exportación CSV compatible con Excel.
+
+6. Configuración
+- Gestión de varios hospedajes.
+- Gestión de habitaciones por hospedaje.
+- Habitaciones activas, desactivadas y estados operativos.
+
+7. Seguridad
+- Login con JWT.
+- Contraseñas con bcrypt.
+- Roles de usuario.
+- API protegida.
+
+PASOS IMPORTANTES
+1. Sustituya backend, frontend y google-apps-script en su repositorio.
+2. Copie Google Apps Script/Codigo.gs en la hoja y ejecute setupHojas.
+3. Publique una nueva versión de Apps Script.
+4. Configure las variables de Render y Vercel según README.md.
+5. Despliegue Render y Vercel sin caché.
+
+
+ADMINISTRACIÓN DE VARIOS HOSPEDAJES
+- Alta de hospedajes adicionales.
+- Edición de nombre y dirección.
+- Activación y desactivación sin borrar historial.
+- Alta, edición, activación y desactivación de habitaciones.
+- Asociación obligatoria de cada habitación a un hospedaje.
+- Calendario filtrable por hospedaje o vista global.
+- Paleta profesional azul noche, turquesa, blanco y dorado.
