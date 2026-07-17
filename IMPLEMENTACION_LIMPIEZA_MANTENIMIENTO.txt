@@ -1,0 +1,23 @@
+IMPLEMENTACIÓN DE LIMPIEZA Y MANTENIMIENTO
+
+1. Las habitaciones en Limpieza, Mantenimiento, Fuera de servicio o inactivas no aparecen en el selector de reservas.
+2. El backend vuelve a validar el estado para evitar reservas mediante llamadas directas a la API.
+3. El calendario muestra estados separados:
+   - LP: Limpieza
+   - MT: Mantenimiento
+   - FS: Fuera de servicio
+4. En Configuración, cada habitación tiene botones para enviarla manualmente a Limpieza o Mantenimiento.
+5. No se puede enviar a limpieza o mantenimiento una habitación ocupada.
+6. El módulo Limpieza permite iniciar y finalizar la tarea. Al finalizar, la habitación queda Disponible.
+7. El módulo Mantenimiento permite registrar problema, prioridad, iniciar reparación y finalizar.
+8. Al finalizar mantenimiento, la habitación pasa primero a Limpieza, nunca directamente a Disponible.
+9. Se conserva historial en las hojas Limpieza, Mantenimiento y Auditoria.
+10. La salida de un huésped sigue creando automáticamente una tarea de limpieza.
+
+PASOS DE ACTUALIZACIÓN
+- Reemplazar backend, frontend y google-apps-script.
+- Copiar Codigo.gs en Apps Script y conservar el TOKEN_SECRETO real.
+- Ejecutar setupHojas.
+- Publicar una nueva versión de Apps Script.
+- Subir cambios a GitHub.
+- Redesplegar Render y Vercel sin caché.

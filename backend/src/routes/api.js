@@ -20,6 +20,9 @@ router.get('/dashboard', async (_req,res,next)=>{
       disponibles:rooms.filter(x=>x.Estado==='Disponible').length,
       ocupadas:rooms.filter(x=>x.Estado==='Ocupada').length,
       reservadas:rooms.filter(x=>x.Estado==='Reservada').length,
+      limpieza:rooms.filter(x=>x.Estado==='Limpieza').length,
+      mantenimiento:rooms.filter(x=>x.Estado==='Mantenimiento').length,
+      fueraServicio:rooms.filter(x=>x.Estado==='Fuera de servicio').length,
       reservasActivas:active.length,
       ingresos:pagos.filter(p=>p.Estado!=='Anulado').reduce((s,p)=>s+n(p.Monto),0),
       pendiente:reservas.filter(r=>!['Cancelada','Finalizada'].includes(r.Estado)).reduce((s,r)=>s+n(r.Saldo),0)
@@ -34,6 +37,7 @@ router.patch('/hospedajes/:id', adminOnly, async(req,res,next)=>{try{res.json(aw
 router.get('/habitaciones', async (_req,res,next)=>{try{res.json((await appScriptGet('habitaciones')).map(r=>({id:r.ID_Habitacion,hospedajeId:r.ID_Hospedaje||'HOS-0001',numero:r.Numero||r['Número']||r.Habitacion||r['Habitación'],tipo:r.Tipo||'Estándar',capacidad:n(r.Capacidad),precio:n(r.Precio),estado:String(r.Estado||'Disponible').trim(),piso:n(r.Piso),activo:String(r.Activo||'Sí').trim(),observaciones:r.Observaciones||''})))}catch(e){next(e)}});
 router.post('/habitaciones', writeHotel, async(req,res,next)=>{try{const h=req.body;res.status(201).json(await appScriptPost('crearHabitacion',{ID_Hospedaje:h.hospedajeId,Numero:h.numero,Tipo:h.tipo,Capacidad:n(h.capacidad),Precio:n(h.precio),Estado:h.estado||'Disponible',Piso:n(h.piso),Activo:h.activo||'Sí',Observaciones:h.observaciones||''}))}catch(e){next(e)}});
 router.patch('/habitaciones/:id', adminOnly, async(req,res,next)=>{try{res.json(await appScriptPost('actualizarHabitacion',{ID_Habitacion:req.params.id,...req.body}))}catch(e){next(e)}});
+router.post('/habitaciones/:id/estado', allowRoles('Administrador','Recepcionista','Limpieza','Mantenimiento'), async(req,res,next)=>{try{const estado=String(req.body.estado||'').trim();if(!['Disponible','Limpieza','Mantenimiento','Fuera de servicio'].includes(estado))throw new Error('Estado no permitido');res.json(await appScriptPost('cambiarEstadoHabitacion',{ID_Habitacion:req.params.id,Estado:estado,Responsable:req.user.nombre||req.user.sub,Observaciones:req.body.observaciones||'',Usuario_Registro:req.user.sub}))}catch(e){next(e)}});
 
 router.get('/huespedes', async (_req,res,next)=>{try{res.json((await appScriptGet('huespedes')).map(r=>({id:r.ID_Huesped,nombre:[r.Nombres,r.Apellidos].filter(Boolean).join(' '),documento:r.Documento,telefono:r.Telefono,correo:r.Correo,nacionalidad:r.Nacionalidad})))}catch(e){next(e)}});
 router.post('/huespedes', writeHotel, async(req,res,next)=>{try{const parts=String(req.body.nombre||'').trim().split(/\s+/);res.status(201).json(await appScriptPost('crearHuesped',{Nombres:parts.shift()||'',Apellidos:parts.join(' '),Documento:req.body.documento||'',Telefono:req.body.telefono||'',Correo:req.body.correo||'',Nacionalidad:req.body.nacionalidad||'Boliviana'}))}catch(e){next(e)}});
@@ -66,6 +70,15 @@ router.get('/limpieza', async (_req,res,next)=>{try{
 router.post('/limpieza/:id/accion', allowRoles('Administrador','Recepcionista','Limpieza'), async(req,res,next)=>{try{
   res.json(await appScriptPost('accionLimpieza',{ID_Limpieza:req.params.id,Accion:req.body.accion,Responsable:req.body.responsable||req.user.nombre||req.user.sub,Observaciones:req.body.observaciones||'',Usuario_Registro:req.user.sub}));
 }catch(e){next(e)}});
+
+router.get('/mantenimiento', async (_req,res,next)=>{try{
+  const [items,habitaciones,hospedajes]=await Promise.all([appScriptGet('mantenimiento'),appScriptGet('habitaciones'),appScriptGet('hospedajes')]);
+  const roomMap=Object.fromEntries(habitaciones.map(x=>[x.ID_Habitacion,x]));
+  const hotelMap=Object.fromEntries(hospedajes.map(x=>[x.ID_Hospedaje,x.Nombre]));
+  res.json(items.map(x=>({id:x.ID_Mantenimiento,habitacionId:x.ID_Habitacion,habitacion:roomMap[x.ID_Habitacion]?.Numero||'',hospedaje:hotelMap[roomMap[x.ID_Habitacion]?.ID_Hospedaje]||'',fecha:x.Fecha_Reporte,problema:x.Problema||'',prioridad:x.Prioridad||'Media',responsable:x.Responsable||'',estado:x.Estado||'Pendiente',fechaSolucion:x.Fecha_Solucion||'',observaciones:x.Observaciones||''})));
+}catch(e){next(e)}});
+router.post('/mantenimiento', allowRoles('Administrador','Recepcionista','Mantenimiento'), async(req,res,next)=>{try{res.status(201).json(await appScriptPost('crearMantenimiento',{ID_Habitacion:req.body.habitacionId,Problema:req.body.problema,Prioridad:req.body.prioridad||'Media',Responsable:req.body.responsable||'',Observaciones:req.body.observaciones||'',Usuario_Registro:req.user.sub}))}catch(e){next(e)}});
+router.post('/mantenimiento/:id/accion', allowRoles('Administrador','Recepcionista','Mantenimiento'), async(req,res,next)=>{try{res.json(await appScriptPost('accionMantenimiento',{ID_Mantenimiento:req.params.id,Accion:req.body.accion,Responsable:req.body.responsable||req.user.nombre||req.user.sub,Observaciones:req.body.observaciones||'',Usuario_Registro:req.user.sub}))}catch(e){next(e)}});
 
 router.get('/pagos', async (_req,res,next)=>{try{res.json((await appScriptGet('pagos')).map(p=>({id:p.ID_Pago,reservaId:p.ID_Reserva,fecha:p.Fecha_Pago,monto:n(p.Monto),metodo:p.Metodo_Pago,concepto:p.Concepto,estado:p.Estado}))) }catch(e){next(e)}});
 

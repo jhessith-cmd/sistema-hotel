@@ -1,0 +1,27 @@
+IMPLEMENTACIÓN: REGISTRO DE INGRESO / CHECK-IN
+
+Se agregó un flujo completo para convertir una reserva confirmada en estadía ocupada.
+
+FUNCIONAMIENTO
+1. Abrir una reserva Confirmada.
+2. Presionar Registrar entrada.
+3. El sistema muestra huésped, hospedaje, habitación y estado actual.
+4. Fecha y hora se completan automáticamente y pueden ajustarse.
+5. Al confirmar:
+   - Reserva: Confirmada -> Ocupada.
+   - Habitación: Reservada/Disponible -> Ocupada.
+   - Se guarda fecha real y hora real de ingreso.
+   - Se registra la acción en Auditoría.
+   - Calendario, lista de reservas y dashboard se actualizan.
+
+VALIDACIONES
+- La reserva debe estar confirmada, pendiente o reservada.
+- La habitación debe estar activa.
+- No puede estar en Limpieza, Mantenimiento o Fuera de servicio.
+- No puede existir otra estadía ocupada en la misma habitación.
+
+ACTUALIZACIÓN
+- Copiar frontend y backend al repositorio.
+- Reemplazar Codigo.gs en Apps Script.
+- Publicar una nueva versión de Apps Script.
+- Subir a GitHub y redesplegar Render y Vercel sin caché.
