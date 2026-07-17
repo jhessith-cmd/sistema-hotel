@@ -1,0 +1,11 @@
+1. Reemplaza backend, frontend y google-apps-script en tu proyecto.
+2. Conserva tus archivos .env locales; no los subas a GitHub.
+3. En Apps Script pega Codigo.gs, configura TOKEN_SECRETO, ejecuta setupHojas y publica Nueva versión.
+4. Sube a GitHub:
+   git add -A
+   git commit -m "Corregir habitaciones y completar flujo móvil"
+   git push origin main
+5. Render: Manual Deploy > Clear build cache & deploy.
+6. Vercel: Redeploy sin usar caché.
+7. En Vercel confirma VITE_API_URL=https://sistema-hotel-s5pl.onrender.com/api
+8. En Render confirma FRONTEND_URL=https://sistema-hotel-pi.vercel.app

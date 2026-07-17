@@ -14,17 +14,67 @@ function setupHojas(){
     Auditoria:['ID_Auditoria','Fecha_Hora','ID_Usuario','Accion','Modulo','ID_Registro','Datos_Anteriores','Datos_Nuevos'],
     Configuracion:['Clave','Valor','Descripcion']
   };
-  Object.keys(schema).forEach(nombre=>{
-    let h=ss.getSheetByName(nombre); if(!h)h=ss.insertSheet(nombre);
-    const headers=schema[nombre];
-    if(h.getLastRow()===0)h.getRange(1,1,1,headers.length).setValues([headers]);
-    else{
-      const current=h.getRange(1,1,1,Math.max(h.getLastColumn(),headers.length)).getDisplayValues()[0];
-      headers.forEach((x,i)=>{if(current[i]!==x)h.getRange(1,i+1).setValue(x)});
+  Object.keys(schema).forEach(nombre=>asegurarEsquema(ss,nombre,schema[nombre]));
+  const hosp=ss.getSheetByName('Hospedajes');
+  if(hosp.getLastRow()===1)hosp.appendRow(['HOS-0001','Hospedaje 1','','Activo',fechaHoy()]);
+  migrarHabitacionesSinHospedaje();
+  normalizarDatos();
+  return 'Hojas verificadas y datos migrados correctamente';
+}
+
+function asegurarEsquema(ss,nombre,headers){
+  let h=ss.getSheetByName(nombre);
+  if(!h)h=ss.insertSheet(nombre);
+  const lastRow=h.getLastRow(),lastCol=h.getLastColumn();
+  if(lastRow===0){h.getRange(1,1,1,headers.length).setValues([headers]);}
+  else{
+    const values=h.getRange(1,1,lastRow,Math.max(1,lastCol)).getDisplayValues();
+    const oldHeaders=values[0].map(x=>String(x).trim());
+    const rows=values.slice(1).filter(r=>r.some(c=>c!==''));
+    const same=headers.length===oldHeaders.length&&headers.every((x,i)=>x===oldHeaders[i]);
+    if(!same){
+      const aliases={
+        ID_Hospedaje:['Hospedaje_ID','ID Hotel','Hotel_ID'],
+        Numero:['Número','Habitacion','Habitación'],
+        Activo:['Activa','Estado_Activo'],
+        Nombre_Completo:['Nombre'],
+        Password_Hash:['Contraseña_Hash','Password'],
+        Fecha_Entrada:['Entrada'],Fecha_Salida:['Salida'],Cantidad_Personas:['Personas']
+      };
+      const remapped=rows.map(row=>headers.map(key=>{
+        let idx=oldHeaders.indexOf(key);
+        if(idx<0&&(aliases[key]||[]).length)idx=(aliases[key]||[]).map(a=>oldHeaders.indexOf(a)).find(i=>i>=0)??-1;
+        return idx>=0?row[idx]:'';
+      }));
+      h.clearContents();
+      h.getRange(1,1,1,headers.length).setValues([headers]);
+      if(remapped.length)h.getRange(2,1,remapped.length,headers.length).setValues(remapped);
     }
-    h.setFrozenRows(1);h.getRange(1,1,1,headers.length).setFontWeight('bold').setBackground('#0f3b3a').setFontColor('#fff');h.autoResizeColumns(1,headers.length);
-  });
-  const hosp=ss.getSheetByName('Hospedajes'); if(hosp.getLastRow()===1)hosp.appendRow(['HOS-0001','Hospedaje 1','','Activo',fechaHoy()]);
+  }
+  h.setFrozenRows(1);
+  h.getRange(1,1,1,headers.length).setFontWeight('bold').setBackground('#123f4a').setFontColor('#fff');
+  h.autoResizeColumns(1,headers.length);
+}
+
+function migrarHabitacionesSinHospedaje(){
+  const h=obtenerHoja('Habitaciones');
+  const data=h.getDataRange().getValues();if(data.length<2)return;
+  const headers=data[0],hotelCol=headers.indexOf('ID_Hospedaje'),activeCol=headers.indexOf('Activo'),stateCol=headers.indexOf('Estado');
+  for(let i=1;i<data.length;i++){
+    if(data[i].some(v=>v!=='')){
+      if(hotelCol>=0&&!data[i][hotelCol])h.getRange(i+1,hotelCol+1).setValue('HOS-0001');
+      if(activeCol>=0&&!data[i][activeCol])h.getRange(i+1,activeCol+1).setValue('Sí');
+      if(stateCol>=0&&!data[i][stateCol])h.getRange(i+1,stateCol+1).setValue('Disponible');
+    }
+  }
+}
+
+function normalizarDatos(){
+  const hosp=obtenerRegistros('Hospedajes');
+  const validHotels=new Set(hosp.map(x=>x.ID_Hospedaje));
+  const h=obtenerHoja('Habitaciones'),data=h.getDataRange().getValues();if(data.length<2)return;
+  const headers=data[0],hotelCol=headers.indexOf('ID_Hospedaje');
+  for(let i=1;i<data.length;i++)if(data[i].some(v=>v!=='')){const id=String(data[i][hotelCol]||'');if(!validHotels.has(id))h.getRange(i+1,hotelCol+1).setValue('HOS-0001');}
 }
 
 function doGet(e){try{validarToken(e.parameter.token);const mapa={usuarios:'Usuarios',hospedajes:'Hospedajes',habitaciones:'Habitaciones',huespedes:'Huespedes',reservas:'Reservas',pagos:'Pagos',limpieza:'Limpieza',mantenimiento:'Mantenimiento'};const hoja=mapa[e.parameter.accion];if(!hoja)return json({ok:false,mensaje:'Acción no reconocida'});return json({ok:true,datos:obtenerRegistros(hoja)});}catch(error){return json({ok:false,mensaje:error.message});}}
@@ -35,7 +85,7 @@ function doPost(e){
     if(body.accion==='crearUsuario')return crear('Usuarios',{ID_Usuario:generarId('USR','Usuarios'),Nombre_Completo:d.Nombre_Completo,Correo:String(d.Correo||'').toLowerCase(),Password_Hash:d.Password_Hash,Rol:d.Rol||'Recepcionista',Estado:d.Estado||'Activo',Fecha_Registro:fechaHoy()});
     if(body.accion==='crearHospedaje')return crear('Hospedajes',{ID_Hospedaje:generarId('HOS','Hospedajes'),Nombre:d.Nombre,Direccion:d.Direccion||'',Estado:d.Estado||'Activo',Fecha_Registro:fechaHoy()});
     if(body.accion==='actualizarHospedaje')return actualizarPorId('Hospedajes','ID_Hospedaje',d.ID_Hospedaje,{Nombre:d.Nombre,Direccion:d.Direccion||'',Estado:d.Estado||'Activo'});
-    if(body.accion==='crearHabitacion')return crear('Habitaciones',{ID_Habitacion:generarId('HAB','Habitaciones'),ID_Hospedaje:d.ID_Hospedaje,Numero:d.Numero,Tipo:d.Tipo,Capacidad:d.Capacidad,Precio:d.Precio,Estado:d.Estado||'Disponible',Piso:d.Piso,Activo:d.Activo||'Sí',Observaciones:d.Observaciones||'',Fecha_Registro:fechaHoy()});
+    if(body.accion==='crearHabitacion'){if(!d.ID_Hospedaje)throw new Error('Debe seleccionar un hospedaje');if(!d.Numero)throw new Error('Debe indicar la habitación');return crear('Habitaciones',{ID_Habitacion:generarId('HAB','Habitaciones'),ID_Hospedaje:d.ID_Hospedaje,Numero:d.Numero,Tipo:d.Tipo,Capacidad:d.Capacidad,Precio:d.Precio,Estado:d.Estado||'Disponible',Piso:d.Piso,Activo:d.Activo||'Sí',Observaciones:d.Observaciones||'',Fecha_Registro:fechaHoy()});}
     if(body.accion==='actualizarHabitacion')return actualizarPorId('Habitaciones','ID_Habitacion',d.ID_Habitacion,{Numero:d.numero,Tipo:d.tipo,Capacidad:d.capacidad,Precio:d.precio,Estado:d.estado,Piso:d.piso,Activo:d.activo,Observaciones:d.observaciones,ID_Hospedaje:d.hospedajeId});
     if(body.accion==='crearHuesped')return crear('Huespedes',{ID_Huesped:generarId('HUE','Huespedes'),Nombres:d.Nombres,Apellidos:d.Apellidos,Documento:d.Documento,Tipo_Documento:d.Tipo_Documento||'CI',Telefono:d.Telefono||'',Correo:d.Correo||'',Nacionalidad:d.Nacionalidad||'Boliviana',Direccion:d.Direccion||'',Observaciones:d.Observaciones||'',Fecha_Registro:fechaHoy()});
     if(body.accion==='crearReserva'){

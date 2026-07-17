@@ -31,7 +31,7 @@ router.get('/hospedajes', async (_req,res,next)=>{try{res.json((await appScriptG
 router.post('/hospedajes', adminOnly, async(req,res,next)=>{try{res.status(201).json(await appScriptPost('crearHospedaje',{Nombre:req.body.nombre,Direccion:req.body.direccion||'',Estado:req.body.estado||'Activo'}))}catch(e){next(e)}});
 router.patch('/hospedajes/:id', adminOnly, async(req,res,next)=>{try{res.json(await appScriptPost('actualizarHospedaje',{ID_Hospedaje:req.params.id,Nombre:req.body.nombre,Direccion:req.body.direccion||'',Estado:req.body.estado||'Activo'}))}catch(e){next(e)}});
 
-router.get('/habitaciones', async (_req,res,next)=>{try{res.json((await appScriptGet('habitaciones')).map(r=>({id:r.ID_Habitacion,hospedajeId:r.ID_Hospedaje,numero:r.Numero,tipo:r.Tipo,capacidad:n(r.Capacidad),precio:n(r.Precio),estado:r.Estado,piso:n(r.Piso),activo:r.Activo||'Sí',observaciones:r.Observaciones||''})))}catch(e){next(e)}});
+router.get('/habitaciones', async (_req,res,next)=>{try{res.json((await appScriptGet('habitaciones')).map(r=>({id:r.ID_Habitacion,hospedajeId:r.ID_Hospedaje||'HOS-0001',numero:r.Numero||r['Número']||r.Habitacion||r['Habitación'],tipo:r.Tipo||'Estándar',capacidad:n(r.Capacidad),precio:n(r.Precio),estado:String(r.Estado||'Disponible').trim(),piso:n(r.Piso),activo:String(r.Activo||'Sí').trim(),observaciones:r.Observaciones||''})))}catch(e){next(e)}});
 router.post('/habitaciones', writeHotel, async(req,res,next)=>{try{const h=req.body;res.status(201).json(await appScriptPost('crearHabitacion',{ID_Hospedaje:h.hospedajeId,Numero:h.numero,Tipo:h.tipo,Capacidad:n(h.capacidad),Precio:n(h.precio),Estado:h.estado||'Disponible',Piso:n(h.piso),Activo:h.activo||'Sí',Observaciones:h.observaciones||''}))}catch(e){next(e)}});
 router.patch('/habitaciones/:id', adminOnly, async(req,res,next)=>{try{res.json(await appScriptPost('actualizarHabitacion',{ID_Habitacion:req.params.id,...req.body}))}catch(e){next(e)}});
 
@@ -74,6 +74,11 @@ router.get('/registro', async (_req,res,next)=>{try{
   const gh=Object.fromEntries(huespedes.map(x=>[x.ID_Huesped,[x.Nombres,x.Apellidos].filter(Boolean).join(' ')]));
   const rh=Object.fromEntries(habitaciones.map(x=>[x.ID_Habitacion,x])); const hp=Object.fromEntries(hospedajes.map(x=>[x.ID_Hospedaje,x.Nombre]));
   res.json(reservas.filter(x=>x.Estado==='Finalizada').map(x=>({id:x.ID_Reserva,nombre:gh[x.ID_Huesped]||'',habitacion:rh[x.ID_Habitacion]?.Numero||'',hospedaje:hp[rh[x.ID_Habitacion]?.ID_Hospedaje]||'',entrada:x.Fecha_Entrada,salida:x.Fecha_Salida_Real||x.Fecha_Salida,total:n(x.Pagado||x.Total),estado:x.Estado})));
+}catch(e){next(e)}});
+
+router.get('/diagnostico', adminOnly, async (_req,res,next)=>{try{
+  const [hospedajes,habitaciones,reservas]=await Promise.all([appScriptGet('hospedajes'),appScriptGet('habitaciones'),appScriptGet('reservas')]);
+  res.json({ok:true,hospedajes:hospedajes.length,habitaciones:habitaciones.length,reservas:reservas.length,habitacionesSinHospedaje:habitaciones.filter(x=>!x.ID_Hospedaje).length,habitacionesInactivas:habitaciones.filter(x=>String(x.Activo).toLowerCase()==='no').length});
 }catch(e){next(e)}});
 
 export default router;

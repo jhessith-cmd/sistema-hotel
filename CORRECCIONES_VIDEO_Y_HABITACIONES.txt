@@ -1,0 +1,32 @@
+HOTELCONTROL - CORRECCIONES REALIZADAS
+
+1. Se corrigió el selector vacío de habitaciones.
+   - Ahora primero se selecciona el hospedaje.
+   - Se muestran las habitaciones activas del hospedaje seleccionado.
+   - Se filtran por las fechas de entrada y salida.
+   - Las reservas canceladas o finalizadas no bloquean habitaciones.
+   - Mantenimiento y limpieza sí bloquean la selección.
+   - El ingreso inmediato excluye habitaciones actualmente ocupadas.
+
+2. Se corrigió la migración de Google Sheets.
+   - setupHojas ya no sobrescribe encabezados y deja datos desplazados.
+   - Reordena columnas conservando los registros existentes.
+   - Las habitaciones antiguas sin hospedaje se asignan a HOS-0001.
+   - Completa Estado=Disponible y Activo=Sí cuando faltan.
+
+3. Se mejoró el formulario móvil según los videos.
+   - Hospedaje y habitación visibles al inicio.
+   - Fechas con valores iniciales.
+   - Secciones claras para ubicación, huésped, fechas y cobro.
+   - Mensaje específico cuando no existen habitaciones disponibles.
+   - Botón Guardar fijo y grande en celular.
+
+4. Se agregó diagnóstico administrativo:
+   GET /api/diagnostico
+   Devuelve cantidades de hospedajes, habitaciones y reservas.
+
+PASO OBLIGATORIO AL ACTUALIZAR
+- Copiar google-apps-script/Codigo.gs.
+- Cambiar TOKEN_SECRETO por el mismo APPS_SCRIPT_TOKEN de Render.
+- Ejecutar setupHojas una vez.
+- Publicar una NUEVA VERSIÓN de la aplicación web de Apps Script.
