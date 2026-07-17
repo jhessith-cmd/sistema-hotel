@@ -1,5 +1,3 @@
 @echo off
-start cmd /k "cd /d %~dp0backend && if not exist .env copy .env.example .env && npm install && npm run dev"
-start cmd /k "cd /d %~dp0frontend && npm install && npm run dev"
-timeout /t 5 >nul
-start http://localhost:5173
+start "HotelControl Backend" cmd /k "cd /d %~dp0backend && if not exist .env copy .env.example .env && yarn start"
+start "HotelControl Frontend" cmd /k "cd /d %~dp0frontend && if not exist .env copy .env.example .env && npm run dev"

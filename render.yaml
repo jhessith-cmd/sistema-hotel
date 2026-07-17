@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: hotelcontrol-api
+    runtime: node
+    rootDir: backend
+    buildCommand: yarn install --frozen-lockfile
+    startCommand: yarn start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATA_MODE
+        value: apps-script
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: APPS_SCRIPT_URL
+        sync: false
+      - key: APPS_SCRIPT_TOKEN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SETUP_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
