@@ -1,0 +1,11 @@
+MEJORA: NUEVO REGISTRO DESDE UNA CASILLA VERDE
+
+- Al tocar una casilla verde del calendario se abre la pantalla "Nuevo registro".
+- Se mantienen las dos opciones sencillas: "Reservar para después" e "Ingresar ahora".
+- Al escoger una opción, el formulario ya trae seleccionado:
+  * Hospedaje.
+  * Habitación.
+  * Fecha de entrada correspondiente a la casilla tocada.
+  * Fecha de salida configurada para el día siguiente.
+- Las casillas reservadas u ocupadas continúan abriendo el detalle de su reserva.
+- Limpieza, mantenimiento y fuera de servicio no abren el formulario de reserva.
