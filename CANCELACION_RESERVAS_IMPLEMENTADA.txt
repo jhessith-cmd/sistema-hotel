@@ -1,0 +1,9 @@
+CANCELACION DE RESERVAS IMPLEMENTADA
+
+- Disponible únicamente para reservas Confirmada, Reservada o Pendiente.
+- Solicita motivo obligatorio y observación detallada.
+- Muestra confirmación clara antes de cancelar.
+- Registra fecha, hora, usuario y motivo de cancelación.
+- La reserva no se elimina; queda con estado Cancelada para historial y auditoría.
+- Recalcula el estado de la habitación sin liberar una habitación ocupada por otra estadía.
+- La disponibilidad se libera solamente para las fechas de la reserva cancelada.

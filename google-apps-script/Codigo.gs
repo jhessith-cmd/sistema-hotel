@@ -7,7 +7,7 @@ function setupHojas(){
     Hospedajes:['ID_Hospedaje','Nombre','Direccion','Estado','Fecha_Registro'],
     Habitaciones:['ID_Habitacion','ID_Hospedaje','Numero','Tipo','Capacidad','Precio','Estado','Piso','Activo','Observaciones','Fecha_Registro'],
     Huespedes:['ID_Huesped','Nombres','Apellidos','Documento','Tipo_Documento','Telefono','Correo','Nacionalidad','Direccion','Observaciones','Fecha_Registro'],
-    Reservas:['ID_Reserva','ID_Huesped','ID_Habitacion','Fecha_Reserva','Fecha_Entrada','Fecha_Salida','Cantidad_Personas','Precio_Noche','Cantidad_Noches','Total','Adelanto','Pagado','Saldo','Estado','Observaciones','Fecha_Ingreso_Real','Hora_Ingreso','Fecha_Salida_Real','Usuario_Registro'],
+    Reservas:['ID_Reserva','ID_Huesped','ID_Habitacion','Fecha_Reserva','Fecha_Entrada','Fecha_Salida','Cantidad_Personas','Precio_Noche','Cantidad_Noches','Total','Adelanto','Pagado','Saldo','Estado','Observaciones','Fecha_Ingreso_Real','Hora_Ingreso','Fecha_Salida_Real','Usuario_Registro','Fecha_Cancelacion','Hora_Cancelacion','Motivo_Cancelacion','Usuario_Cancelacion'],
     Pagos:['ID_Pago','ID_Reserva','Fecha_Pago','Monto','Metodo_Pago','Numero_Comprobante','Concepto','Estado','Observaciones','Usuario_Registro'],
     Limpieza:['ID_Limpieza','ID_Habitacion','Fecha','Responsable','Hora_Inicio','Hora_Finalizacion','Estado','Observaciones','Foto_URL'],
     Mantenimiento:['ID_Mantenimiento','ID_Habitacion','Fecha_Reporte','Problema','Prioridad','Responsable','Estado','Fecha_Solucion','Observaciones','Foto_URL'],
@@ -122,11 +122,28 @@ function accionReserva(d){
     const monto=Number(d.Monto||0);if(monto<=0)throw new Error('Monto inválido');crearPagoInterno(d.ID_Reserva,monto,d.Metodo_Pago||'Efectivo','Pago de hospedaje',d.Usuario_Registro,d.Observaciones);const pagado=Number(reserva.Pagado||reserva.Adelanto||0)+monto;actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Pagado:pagado,Saldo:Math.max(0,Number(reserva.Total)-pagado)});return json({ok:true,mensaje:'Pago registrado'});
   }
   if(d.Accion==='editar'){
-    const nuevaSalida=d.Fecha_Salida||reserva.Fecha_Salida;const noches=calcularNoches(reserva.Fecha_Entrada,nuevaSalida);const total=d.Total!==undefined&&d.Total!==''?Number(d.Total):Number(reserva.Precio_Noche)*noches;const pagado=Number(reserva.Pagado||reserva.Adelanto||0);
-    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Fecha_Salida:nuevaSalida,Cantidad_Noches:noches,Total:total,Saldo:Math.max(0,total-pagado),ID_Habitacion:d.ID_Habitacion||reserva.ID_Habitacion,Cantidad_Personas:d.Cantidad_Personas||reserva.Cantidad_Personas,Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});return json({ok:true,mensaje:'Estadía actualizada'});
+    const nuevaEntrada=d.Fecha_Entrada||reserva.Fecha_Entrada;
+    const nuevaSalida=d.Fecha_Salida||reserva.Fecha_Salida;
+    const nuevaHabitacion=d.ID_Habitacion||reserva.ID_Habitacion;
+    const inicio=convertirFecha(nuevaEntrada),fin=convertirFecha(nuevaSalida);
+    if(fin<=inicio)throw new Error('La fecha de salida debe ser posterior a la entrada');
+    const choque=obtenerRegistros('Reservas').some(r=>r.ID_Reserva!==d.ID_Reserva&&r.ID_Habitacion===nuevaHabitacion&&!['Cancelada','Finalizada'].includes(r.Estado)&&inicio<convertirFecha(r.Fecha_Salida)&&fin>convertirFecha(r.Fecha_Entrada));
+    if(choque)throw new Error('La habitación ya tiene otra reserva en esas fechas');
+    const noches=calcularNoches(nuevaEntrada,nuevaSalida);
+    const total=d.Total!==undefined&&d.Total!==''?Number(d.Total):Number(reserva.Precio_Noche)*noches;
+    const pagado=Number(reserva.Pagado||reserva.Adelanto||0);
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Fecha_Entrada:nuevaEntrada,Fecha_Salida:nuevaSalida,Cantidad_Noches:noches,Total:total,Saldo:Math.max(0,total-pagado),ID_Habitacion:nuevaHabitacion,Cantidad_Personas:d.Cantidad_Personas||reserva.Cantidad_Personas,Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});
+    auditar(d.Usuario_Registro,'Editar reserva o estadía','Reservas',d.ID_Reserva);
+    return json({ok:true,mensaje:'Reserva actualizada correctamente'});
   }
   if(d.Accion==='cancelar'){
-    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Cancelada',Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});actualizarEstadoHabitacion(reserva.ID_Habitacion,'Disponible');auditar(d.Usuario_Registro,'Cancelar reserva','Reservas',d.ID_Reserva);return json({ok:true,mensaje:'Reserva cancelada'});
+    if(!['Confirmada','Reservada','Pendiente'].includes(String(reserva.Estado||'')))throw new Error('Solo se pueden cancelar reservas pendientes de ingreso');
+    const ahora=new Date();
+    const detalle=[d.Motivo?('Motivo: '+d.Motivo):'',d.Observaciones||''].filter(Boolean).join(' - ');
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Cancelada',Observaciones:combinarObs(reserva.Observaciones,detalle),Fecha_Cancelacion:Utilities.formatDate(ahora,Session.getScriptTimeZone(),'dd/MM/yyyy'),Hora_Cancelacion:Utilities.formatDate(ahora,Session.getScriptTimeZone(),'HH:mm'),Motivo_Cancelacion:d.Motivo||'Sin especificar',Usuario_Cancelacion:d.Usuario_Registro||'Sistema'});
+    recalcularEstadoHabitacion(reserva.ID_Habitacion,d.ID_Reserva);
+    auditar(d.Usuario_Registro,'Cancelar reserva','Reservas',d.ID_Reserva);
+    return json({ok:true,mensaje:'Reserva cancelada correctamente. Se conservó en el historial.'});
   }
   if(d.Accion==='salida'){
     const saldo=Number(reserva.Saldo||0);if(saldo>0&&Number(d.Monto||0)>0)crearPagoInterno(d.ID_Reserva,Number(d.Monto),d.Metodo_Pago||'Efectivo','Pago final',d.Usuario_Registro,d.Observaciones);
@@ -194,6 +211,12 @@ function cambiarEstadoHabitacion(d){
 
 function crearPagoInterno(id,monto,metodo,concepto,usuario,obs){const reg={ID_Pago:generarId('PAG','Pagos'),ID_Reserva:id,Fecha_Pago:fechaHoy(),Monto:Number(monto||0),Metodo_Pago:metodo||'Efectivo',Numero_Comprobante:'',Concepto:concepto||'Pago',Estado:'Confirmado',Observaciones:obs||'',Usuario_Registro:usuario||'Sistema'};agregarRegistro('Pagos',reg);return json({ok:true,datos:reg});}
 function actualizarEstadoHabitacion(id,estado){actualizarPorId('Habitaciones','ID_Habitacion',id,{Estado:estado});}
+function recalcularEstadoHabitacion(idHabitacion,idReservaIgnorar){
+  const reservas=obtenerRegistros('Reservas').filter(r=>r.ID_Habitacion===idHabitacion&&r.ID_Reserva!==idReservaIgnorar&&!['Cancelada','Finalizada'].includes(String(r.Estado||'')));
+  const ocupada=reservas.some(r=>['Ocupada','En curso'].includes(String(r.Estado||'')));
+  actualizarEstadoHabitacion(idHabitacion,ocupada?'Ocupada':'Disponible');
+}
+
 function crear(hoja,registro){agregarRegistro(hoja,registro);return json({ok:true,datos:registro});}
 function obtenerHoja(nombre){const h=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);if(!h)throw new Error('No existe la hoja '+nombre);return h;}
 function obtenerRegistros(nombre){const v=obtenerHoja(nombre).getDataRange().getDisplayValues();if(v.length<2)return[];const e=v[0];return v.slice(1).filter(f=>f.some(c=>c!=='')).map(f=>Object.fromEntries(e.map((k,i)=>[k,f[i]])));}

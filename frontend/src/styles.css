@@ -44,3 +44,34 @@ body{background:var(--background)}.side{background:linear-gradient(180deg,var(--
 .calendar td.libre{cursor:pointer;position:relative}
 .calendar td.libre:hover{filter:brightness(.94);box-shadow:inset 0 0 0 2px rgba(8,91,148,.35)}
 .calendar td.libre:focus-visible{outline:3px solid #0b6fd3;outline-offset:-3px}
+
+/* Calendario: fechas pasadas de solo lectura y estadías finalizadas */
+.calendar td.pasado {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: default;
+}
+.calendar td.finalizada {
+  background: #64748b;
+  color: #fff;
+  cursor: pointer;
+}
+.calendar td.libre {
+  cursor: pointer;
+}
+.calendar td.libre:hover {
+  outline: 3px solid rgba(15, 118, 110, .25);
+  outline-offset: -3px;
+}
+
+/* Acciones contextuales al tocar el calendario */
+.calendar-action-hint{display:flex;align-items:center;gap:12px;padding:14px 16px;margin:0 0 14px;border-radius:14px;border:1px solid;font-size:15px}
+.calendar-action-hint svg{width:28px;height:28px;flex:0 0 auto}
+.calendar-action-hint span{display:flex;flex-direction:column;gap:2px}
+.calendar-action-hint small{font-size:13px;line-height:1.35}
+.calendar-action-hint.reserved{background:#fff8db;border-color:#e5bd3f;color:#705500}
+.calendar-action-hint.occupied{background:#fff0ef;border-color:#e56b62;color:#842821}
+@media (max-width:640px){.calendar-action-hint{position:sticky;top:0;z-index:3;margin:-4px -2px 14px;padding:13px}.action-stack button{min-height:54px;font-size:16px}}
+
+
+.cancel-warning{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;margin:8px 0 14px}.cancel-warning svg{min-width:24px;margin-top:2px}.cancel-warning div{display:flex;flex-direction:column;gap:4px}.cancel-warning b{font-size:1rem}.cancel-warning span{font-size:.9rem;line-height:1.4}.action-row .danger{min-height:48px;font-weight:800}

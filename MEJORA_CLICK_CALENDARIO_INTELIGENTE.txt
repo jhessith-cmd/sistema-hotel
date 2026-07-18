@@ -1,0 +1,19 @@
+MEJORA IMPLEMENTADA: CLIC INTELIGENTE EN EL CALENDARIO
+
+1. Al tocar una casilla verde correspondiente al día de hoy:
+   - Abre directamente el formulario "Ingresar ahora".
+   - Selecciona automáticamente hospedaje, habitación y fecha de ingreso.
+   - Configura la salida para el día siguiente.
+   - Al guardar, la reserva y la habitación quedan como Ocupadas.
+
+2. Al tocar una casilla verde de una fecha futura:
+   - Abre directamente el formulario "Reservar para después".
+   - Selecciona automáticamente hospedaje, habitación y fechas.
+   - Al guardar, queda como reserva futura.
+
+3. Fechas anteriores:
+   - No permiten crear registros nuevos.
+   - Las estadías finalizadas se muestran en plomo y se pueden abrir en modo lectura.
+   - Los días pasados sin registro permanecen claros y sin acción.
+
+4. Los formularios no permiten cambiar la entrada a una fecha anterior.

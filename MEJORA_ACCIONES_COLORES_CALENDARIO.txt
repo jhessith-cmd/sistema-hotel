@@ -1,0 +1,17 @@
+MEJORA DE ACCIONES SEGÚN EL COLOR DEL CALENDARIO
+
+AMARILLO (RESERVADA / CONFIRMADA / PENDIENTE)
+- Al tocar la casilla abre el detalle de la reserva.
+- Muestra botones grandes para Registrar entrada, Cambiar fecha de reserva y Cancelar reserva.
+- Cambiar fecha permite modificar entrada y salida.
+- Se valida que las fechas no se crucen con otra reserva de la misma habitación.
+
+ROJO (OCUPADA)
+- Al tocar la casilla abre directamente el formulario Registrar salida.
+- Si existe saldo pendiente permite registrar el pago final antes de finalizar.
+- Puede volver atrás para Registrar pago o Editar estadía.
+
+RESULTADOS
+- Registrar entrada cambia reserva y habitación a Ocupada.
+- Registrar salida finaliza la reserva y envía la habitación a Limpieza.
+- Las actualizaciones se reflejan en calendario, reservas y panel.

@@ -58,7 +58,7 @@ router.post('/reservas', writeHotel, async(req,res,next)=>{
     res.status(201).json(created);
   }catch(e){next(e)}
 });
-router.post('/reservas/:id/accion', writeHotel, async(req,res,next)=>{try{res.json(await appScriptPost('accionReserva',{ID_Reserva:req.params.id,Accion:req.body.accion,Monto:n(req.body.monto),Metodo_Pago:req.body.metodoPago||'',Fecha:req.body.fecha||'',Hora:req.body.hora||'',Observaciones:req.body.observaciones||'',Fecha_Salida:req.body.salida||'',Total:req.body.total===''?undefined:n(req.body.total),ID_Habitacion:req.body.habitacionId||'',Cantidad_Personas:req.body.personas? n(req.body.personas):undefined,Usuario_Registro:req.user.sub}))}catch(e){next(e)}});
+router.post('/reservas/:id/accion', writeHotel, async(req,res,next)=>{try{res.json(await appScriptPost('accionReserva',{ID_Reserva:req.params.id,Accion:req.body.accion,Monto:n(req.body.monto),Metodo_Pago:req.body.metodoPago||'',Fecha:req.body.fecha||'',Hora:req.body.hora||'',Observaciones:req.body.observaciones||'',Motivo:req.body.motivo||'',Fecha_Entrada:req.body.entrada||'',Fecha_Salida:req.body.salida||'',Total:req.body.total===''?undefined:n(req.body.total),ID_Habitacion:req.body.habitacionId||'',Cantidad_Personas:req.body.personas? n(req.body.personas):undefined,Usuario_Registro:req.user.sub}))}catch(e){next(e)}});
 
 
 router.get('/limpieza', async (_req,res,next)=>{try{
