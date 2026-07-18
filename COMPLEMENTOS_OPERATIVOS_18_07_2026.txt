@@ -1,0 +1,18 @@
+COMPLEMENTOS IMPLEMENTADOS
+
+1. Habitaciones editables: nombre, cantidad de camas, precio y estado En alquiler.
+2. En alquiler se muestra plomo y bloquea nuevas reservas.
+3. Cambio de huésped el mismo día: celda dividida en triángulo mañana/salida y noche/ingreso.
+4. Cada pago continúa asociado a su ID de reserva; no se mezclan cobros.
+5. Fecha y hora real de ingreso y salida, editables.
+6. Edición de datos del huésped, fechas, habitación, personas y precio.
+7. Anulación de pagos mal cargados con recálculo automático del saldo.
+8. Registro de hospedados con hora de ingreso/salida, personas y total pagado.
+9. Exportación CSV compatible con Excel con todos esos campos.
+10. El pasado libre permanece verde; plomo solo para estadías finalizadas, En alquiler y Mantenimiento.
+
+ACTUALIZACIÓN
+- Reemplazar frontend, backend y google-apps-script.
+- Ejecutar setupHojas en Apps Script y publicar nueva versión.
+- Subir a GitHub.
+- Redesplegar Render y Vercel sin caché.

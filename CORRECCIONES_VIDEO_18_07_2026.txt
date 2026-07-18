@@ -1,0 +1,24 @@
+CORRECCIONES IMPLEMENTADAS DESPUÉS DE REVISAR EL VIDEO
+
+1. El calendario reconoce como reservadas las reservas con estado Confirmada, Reservada o Pendiente.
+2. Al tocar una casilla verde se abre el formulario con hospedaje, habitación y fecha ya seleccionados.
+3. Se resaltan el día actual, ingresos de hoy y salidas de hoy.
+4. El detalle mantiene visibles los botones en celular mediante cabecera y acciones fijas.
+5. Las reservas pendientes muestran Registrar entrada, Editar reserva y Cancelar reserva.
+6. Al registrar entrada, reserva y habitación cambian a Ocupada y se actualizan calendario y panel.
+7. Las estadías ocupadas muestran Registrar pago, Editar estadía y Registrar salida.
+8. Se agregó historial de pagos y número de comprobante opcional.
+9. No se permite pagar más que el saldo pendiente.
+10. No se permite finalizar la salida con saldo pendiente sin registrar el pago completo.
+11. Al registrar salida, la habitación pasa a Limpieza y se genera la tarea correspondiente.
+12. La edición valida cruces de fechas y disponibilidad de la nueva habitación.
+13. Cancelar una reserva ya no libera incorrectamente una habitación que continúe ocupada.
+14. Las reservas futuras no cambian globalmente el estado físico de la habitación; la ocupación por fecha se representa en el calendario.
+15. Se mejoró la visualización móvil del resumen de cobro, formularios y botones.
+
+ACTUALIZACIÓN
+- Reemplazar backend, frontend y google-apps-script.
+- Conservar el TOKEN_SECRETO real en Codigo.gs.
+- Ejecutar setupHojas y publicar una nueva versión de Apps Script.
+- Subir a GitHub.
+- Redesplegar Render y Vercel sin caché.

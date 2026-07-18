@@ -7,7 +7,7 @@ function setupHojas(){
     Hospedajes:['ID_Hospedaje','Nombre','Direccion','Estado','Fecha_Registro'],
     Habitaciones:['ID_Habitacion','ID_Hospedaje','Numero','Tipo','Capacidad','Precio','Estado','Piso','Activo','Observaciones','Fecha_Registro'],
     Huespedes:['ID_Huesped','Nombres','Apellidos','Documento','Tipo_Documento','Telefono','Correo','Nacionalidad','Direccion','Observaciones','Fecha_Registro'],
-    Reservas:['ID_Reserva','ID_Huesped','ID_Habitacion','Fecha_Reserva','Fecha_Entrada','Fecha_Salida','Cantidad_Personas','Precio_Noche','Cantidad_Noches','Total','Adelanto','Pagado','Saldo','Estado','Observaciones','Fecha_Ingreso_Real','Hora_Ingreso','Fecha_Salida_Real','Usuario_Registro'],
+    Reservas:['ID_Reserva','ID_Huesped','ID_Habitacion','Fecha_Reserva','Fecha_Entrada','Fecha_Salida','Cantidad_Personas','Precio_Noche','Cantidad_Noches','Total','Adelanto','Pagado','Saldo','Estado','Observaciones','Fecha_Ingreso_Real','Hora_Ingreso','Fecha_Salida_Real','Hora_Salida','Usuario_Registro'],
     Pagos:['ID_Pago','ID_Reserva','Fecha_Pago','Monto','Metodo_Pago','Numero_Comprobante','Concepto','Estado','Observaciones','Usuario_Registro'],
     Limpieza:['ID_Limpieza','ID_Habitacion','Fecha','Responsable','Hora_Inicio','Hora_Finalizacion','Estado','Observaciones','Foto_URL'],
     Mantenimiento:['ID_Mantenimiento','ID_Habitacion','Fecha_Reporte','Problema','Prioridad','Responsable','Estado','Fecha_Solucion','Observaciones','Foto_URL'],
@@ -90,14 +90,15 @@ function doPost(e){
     if(body.accion==='crearHuesped')return crear('Huespedes',{ID_Huesped:generarId('HUE','Huespedes'),Nombres:d.Nombres,Apellidos:d.Apellidos,Documento:d.Documento,Tipo_Documento:d.Tipo_Documento||'CI',Telefono:d.Telefono||'',Correo:d.Correo||'',Nacionalidad:d.Nacionalidad||'Boliviana',Direccion:d.Direccion||'',Observaciones:d.Observaciones||'',Fecha_Registro:fechaHoy()});
     if(body.accion==='crearReserva'){
       validarReserva(d);const noches=calcularNoches(d.Fecha_Entrada,d.Fecha_Salida),total=noches*Number(d.Precio_Noche||0),adelanto=Number(d.Adelanto||0),ocupada=d.Estado==='Ocupada';
-      const r={ID_Reserva:generarId('RES','Reservas'),ID_Huesped:d.ID_Huesped,ID_Habitacion:d.ID_Habitacion,Fecha_Reserva:fechaHoy(),Fecha_Entrada:d.Fecha_Entrada,Fecha_Salida:d.Fecha_Salida,Cantidad_Personas:d.Cantidad_Personas,Precio_Noche:d.Precio_Noche,Cantidad_Noches:noches,Total:total,Adelanto:adelanto,Pagado:adelanto,Saldo:total-adelanto,Estado:d.Estado||'Confirmada',Observaciones:d.Observaciones||'',Fecha_Ingreso_Real:ocupada?fechaHoy():'',Hora_Ingreso:ocupada?horaActual():'',Fecha_Salida_Real:'',Usuario_Registro:d.Usuario_Registro||'Sistema'};
-      const out=crear('Reservas',r);actualizarEstadoHabitacion(d.ID_Habitacion,ocupada?'Ocupada':'Reservada');if(adelanto>0)crearPagoInterno(r.ID_Reserva,adelanto,'Efectivo','Adelanto',d.Usuario_Registro);return out;
+      const r={ID_Reserva:generarId('RES','Reservas'),ID_Huesped:d.ID_Huesped,ID_Habitacion:d.ID_Habitacion,Fecha_Reserva:fechaHoy(),Fecha_Entrada:d.Fecha_Entrada,Fecha_Salida:d.Fecha_Salida,Cantidad_Personas:d.Cantidad_Personas,Precio_Noche:d.Precio_Noche,Cantidad_Noches:noches,Total:total,Adelanto:adelanto,Pagado:adelanto,Saldo:total-adelanto,Estado:d.Estado||'Confirmada',Observaciones:d.Observaciones||'',Fecha_Ingreso_Real:ocupada?fechaHoy():'',Hora_Ingreso:ocupada?horaActual():'',Fecha_Salida_Real:'',Hora_Salida:'',Usuario_Registro:d.Usuario_Registro||'Sistema'};
+      const out=crear('Reservas',r);if(ocupada)actualizarEstadoHabitacion(d.ID_Habitacion,'Ocupada');if(adelanto>0)crearPagoInterno(r.ID_Reserva,adelanto,'Efectivo','Adelanto',d.Usuario_Registro);return out;
     }
     if(body.accion==='accionReserva')return accionReserva(d);
     if(body.accion==='accionLimpieza')return accionLimpieza(d);
     if(body.accion==='crearMantenimiento')return crearMantenimiento(d);
     if(body.accion==='accionMantenimiento')return accionMantenimiento(d);
     if(body.accion==='cambiarEstadoHabitacion')return cambiarEstadoHabitacion(d);
+    if(body.accion==='anularPago')return anularPago(d);
     if(body.accion==='crearPago')return crearPagoInterno(d.ID_Reserva,d.Monto,d.Metodo_Pago,d.Concepto||'Pago de hospedaje',d.Usuario_Registro,d.Observaciones||'');
     return json({ok:false,mensaje:'Acción no reconocida'});
   }catch(error){return json({ok:false,mensaje:error.message});}
@@ -109,7 +110,7 @@ function accionReserva(d){
     if(!['Confirmada','Pendiente','Reservada'].includes(String(reserva.Estado||'')))throw new Error('La reserva ya no está disponible para registrar entrada');
     const habitacion=buscarPorId('Habitaciones','ID_Habitacion',reserva.ID_Habitacion);if(!habitacion)throw new Error('Habitación no encontrada');
     if(String(habitacion.Activo||'Sí')==='No')throw new Error('La habitación está inactiva');
-    if(['Limpieza','Mantenimiento','Fuera de servicio'].includes(String(habitacion.Estado||'')))throw new Error('No se puede registrar el ingreso porque la habitación está en '+habitacion.Estado);
+    if(['Limpieza','Mantenimiento','Fuera de servicio','En alquiler'].includes(String(habitacion.Estado||'')))throw new Error('No se puede registrar el ingreso porque la habitación está en '+habitacion.Estado);
     const otraOcupacion=obtenerRegistros('Reservas').find(r=>r.ID_Reserva!==d.ID_Reserva&&r.ID_Habitacion===reserva.ID_Habitacion&&r.Estado==='Ocupada');
     if(otraOcupacion)throw new Error('La habitación ya se encuentra ocupada por otra estadía');
     const fechaIngreso=d.Fecha||fechaHoy(),horaIngreso=d.Hora||horaActual();
@@ -119,19 +120,42 @@ function accionReserva(d){
     return json({ok:true,mensaje:'Entrada registrada correctamente. La habitación ahora está ocupada.',estadoReserva:'Ocupada',estadoHabitacion:'Ocupada',fechaIngreso:fechaIngreso,horaIngreso:horaIngreso});
   }
   if(d.Accion==='pago'){
-    const monto=Number(d.Monto||0);if(monto<=0)throw new Error('Monto inválido');crearPagoInterno(d.ID_Reserva,monto,d.Metodo_Pago||'Efectivo','Pago de hospedaje',d.Usuario_Registro,d.Observaciones);const pagado=Number(reserva.Pagado||reserva.Adelanto||0)+monto;actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Pagado:pagado,Saldo:Math.max(0,Number(reserva.Total)-pagado)});return json({ok:true,mensaje:'Pago registrado'});
+    if(!['Ocupada','Confirmada','Pendiente','Reservada'].includes(String(reserva.Estado||'')))throw new Error('La reserva no admite pagos');
+    const monto=Number(d.Monto||0),saldoActual=Math.max(0,Number(reserva.Total||0)-Number(reserva.Pagado||reserva.Adelanto||0));
+    if(monto<=0)throw new Error('El monto debe ser mayor a cero');
+    if(monto>saldoActual)throw new Error('El monto supera el saldo pendiente');
+    crearPagoInterno(d.ID_Reserva,monto,d.Metodo_Pago||'Efectivo','Pago de hospedaje',d.Usuario_Registro,d.Observaciones,d.Numero_Comprobante);
+    const pagado=Number(reserva.Pagado||reserva.Adelanto||0)+monto;
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Pagado:pagado,Saldo:Math.max(0,Number(reserva.Total)-pagado)});
+    auditar(d.Usuario_Registro,'Registrar pago','Pagos',d.ID_Reserva);
+    return json({ok:true,mensaje:'Pago registrado correctamente',pagado:pagado,saldo:Math.max(0,Number(reserva.Total)-pagado)});
   }
   if(d.Accion==='editar'){
-    const nuevaSalida=d.Fecha_Salida||reserva.Fecha_Salida;const noches=calcularNoches(reserva.Fecha_Entrada,nuevaSalida);const total=d.Total!==undefined&&d.Total!==''?Number(d.Total):Number(reserva.Precio_Noche)*noches;const pagado=Number(reserva.Pagado||reserva.Adelanto||0);
-    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Fecha_Salida:nuevaSalida,Cantidad_Noches:noches,Total:total,Saldo:Math.max(0,total-pagado),ID_Habitacion:d.ID_Habitacion||reserva.ID_Habitacion,Cantidad_Personas:d.Cantidad_Personas||reserva.Cantidad_Personas,Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});return json({ok:true,mensaje:'Estadía actualizada'});
+    const nuevaEntrada=d.Fecha_Entrada||reserva.Fecha_Entrada,nuevaSalida=d.Fecha_Salida||reserva.Fecha_Salida,nuevaHabitacion=d.ID_Habitacion||reserva.ID_Habitacion;
+    if(convertirFecha(nuevaSalida)<=convertirFecha(nuevaEntrada))throw new Error('La salida debe ser posterior a la entrada');
+    const habitacion=buscarPorId('Habitaciones','ID_Habitacion',nuevaHabitacion);if(!habitacion)throw new Error('Habitación no encontrada');
+    if(String(habitacion.Activo||'Sí')==='No'||['Limpieza','Mantenimiento','Fuera de servicio','En alquiler'].includes(String(habitacion.Estado||'')))throw new Error('La habitación seleccionada no está disponible');
+    const choque=obtenerRegistros('Reservas').some(r=>r.ID_Reserva!==d.ID_Reserva&&r.ID_Habitacion===nuevaHabitacion&&!['Cancelada','Finalizada'].includes(normalizarEstado(r.Estado))&&convertirFecha(nuevaEntrada)<convertirFecha(r.Fecha_Salida)&&convertirFecha(nuevaSalida)>convertirFecha(r.Fecha_Entrada));
+    if(choque)throw new Error('La habitación ya tiene una reserva en esas fechas');
+    const noches=calcularNoches(nuevaEntrada,nuevaSalida),total=d.Total!==undefined&&d.Total!==''?Number(d.Total):Number(reserva.Precio_Noche)*noches,pagado=Number(reserva.Pagado||reserva.Adelanto||0);
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Fecha_Entrada:nuevaEntrada,Fecha_Salida:nuevaSalida,Cantidad_Noches:noches,Total:total,Saldo:Math.max(0,total-pagado),ID_Habitacion:nuevaHabitacion,Cantidad_Personas:d.Cantidad_Personas||reserva.Cantidad_Personas,Fecha_Ingreso_Real:d.Fecha_Ingreso_Real||reserva.Fecha_Ingreso_Real,Hora_Ingreso:d.Hora_Ingreso||reserva.Hora_Ingreso,Fecha_Salida_Real:d.Fecha_Salida_Real||reserva.Fecha_Salida_Real,Hora_Salida:d.Hora_Salida||reserva.Hora_Salida,Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});
+    if(d.Nombre_Huesped||d.Telefono){const h=buscarPorId('Huespedes','ID_Huesped',reserva.ID_Huesped);if(h){const partes=String(d.Nombre_Huesped||[h.Nombres,h.Apellidos].filter(Boolean).join(' ')).trim().split(/\s+/);actualizarPorId('Huespedes','ID_Huesped',reserva.ID_Huesped,{Nombres:partes.shift()||h.Nombres,Apellidos:partes.join(' '),Telefono:d.Telefono||h.Telefono});}}
+    if(nuevaHabitacion!==reserva.ID_Habitacion){recalcularEstadoHabitacion(reserva.ID_Habitacion);if(normalizarEstado(reserva.Estado)==='Ocupada')actualizarEstadoHabitacion(nuevaHabitacion,'Ocupada');}
+    auditar(d.Usuario_Registro,'Editar estadía','Reservas',d.ID_Reserva);
+    return json({ok:true,mensaje:'Estadía actualizada correctamente'});
   }
   if(d.Accion==='cancelar'){
-    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Cancelada',Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});actualizarEstadoHabitacion(reserva.ID_Habitacion,'Disponible');auditar(d.Usuario_Registro,'Cancelar reserva','Reservas',d.ID_Reserva);return json({ok:true,mensaje:'Reserva cancelada'});
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Cancelada',Observaciones:combinarObs(reserva.Observaciones,d.Observaciones)});recalcularEstadoHabitacion(reserva.ID_Habitacion);auditar(d.Usuario_Registro,'Cancelar reserva','Reservas',d.ID_Reserva);return json({ok:true,mensaje:'Reserva cancelada'});
   }
   if(d.Accion==='salida'){
-    const saldo=Number(reserva.Saldo||0);if(saldo>0&&Number(d.Monto||0)>0)crearPagoInterno(d.ID_Reserva,Number(d.Monto),d.Metodo_Pago||'Efectivo','Pago final',d.Usuario_Registro,d.Observaciones);
-    const actualizado=buscarPorId('Reservas','ID_Reserva',d.ID_Reserva);const pagoFinal=Number(actualizado.Pagado||actualizado.Adelanto||0)+Math.max(0,Number(d.Monto||0));
-    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Finalizada',Fecha_Salida_Real:d.Fecha||fechaHoy(),Pagado:pagoFinal,Saldo:0});actualizarEstadoHabitacion(reserva.ID_Habitacion,'Limpieza');crearLimpiezaPendiente(reserva.ID_Habitacion,d.Usuario_Registro,d.Observaciones);auditar(d.Usuario_Registro,'Registrar salida','Reservas',d.ID_Reserva);return json({ok:true,mensaje:'Salida registrada; habitación en limpieza'});
+    if(normalizarEstado(reserva.Estado)!=='Ocupada')throw new Error('Solo se puede registrar salida de una estadía ocupada');
+    const pagadoActual=Number(reserva.Pagado||reserva.Adelanto||0),saldo=Math.max(0,Number(reserva.Total||0)-pagadoActual),monto=Number(d.Monto||0);
+    if(saldo>0&&monto<saldo)throw new Error('Debe registrar el pago total pendiente antes de finalizar la salida');
+    if(saldo>0)crearPagoInterno(d.ID_Reserva,saldo,d.Metodo_Pago||'Efectivo','Pago final',d.Usuario_Registro,d.Observaciones,d.Numero_Comprobante);
+    const pagoFinal=pagadoActual+saldo;
+    actualizarPorId('Reservas','ID_Reserva',d.ID_Reserva,{Estado:'Finalizada',Fecha_Salida_Real:d.Fecha||fechaHoy(),Hora_Salida:d.Hora||horaActual(),Pagado:pagoFinal,Saldo:0});
+    actualizarEstadoHabitacion(reserva.ID_Habitacion,'Limpieza');crearLimpiezaPendiente(reserva.ID_Habitacion,d.Usuario_Registro,d.Observaciones);auditar(d.Usuario_Registro,'Registrar salida','Reservas',d.ID_Reserva);
+    return json({ok:true,mensaje:'Salida registrada. La habitación quedó pendiente de limpieza.'});
   }
   throw new Error('Acción no reconocida');
 }
@@ -192,7 +216,18 @@ function cambiarEstadoHabitacion(d){
   actualizarEstadoHabitacion(d.ID_Habitacion,d.Estado);auditar(d.Usuario_Registro,'Cambiar estado a '+d.Estado,'Habitaciones',d.ID_Habitacion);return json({ok:true,mensaje:'Estado actualizado'});
 }
 
-function crearPagoInterno(id,monto,metodo,concepto,usuario,obs){const reg={ID_Pago:generarId('PAG','Pagos'),ID_Reserva:id,Fecha_Pago:fechaHoy(),Monto:Number(monto||0),Metodo_Pago:metodo||'Efectivo',Numero_Comprobante:'',Concepto:concepto||'Pago',Estado:'Confirmado',Observaciones:obs||'',Usuario_Registro:usuario||'Sistema'};agregarRegistro('Pagos',reg);return json({ok:true,datos:reg});}
+
+function anularPago(d){
+  const pago=buscarPorId('Pagos','ID_Pago',d.ID_Pago);if(!pago)throw new Error('Pago no encontrado');
+  if(String(pago.Estado||'')==='Anulado')throw new Error('El pago ya fue anulado');
+  actualizarPorId('Pagos','ID_Pago',d.ID_Pago,{Estado:'Anulado',Observaciones:combinarObs(pago.Observaciones,d.Motivo)});
+  const pagos=obtenerRegistros('Pagos').filter(p=>p.ID_Reserva===pago.ID_Reserva&&p.ID_Pago!==d.ID_Pago&&String(p.Estado||'')!=='Anulado');
+  const pagado=pagos.reduce((sum,p)=>sum+Number(p.Monto||0),0);
+  const reserva=buscarPorId('Reservas','ID_Reserva',pago.ID_Reserva);if(reserva)actualizarPorId('Reservas','ID_Reserva',pago.ID_Reserva,{Pagado:pagado,Saldo:Math.max(0,Number(reserva.Total||0)-pagado)});
+  auditar(d.Usuario_Registro,'Anular pago','Pagos',d.ID_Pago);return json({ok:true,mensaje:'Pago anulado y saldo recalculado'});
+}
+
+function crearPagoInterno(id,monto,metodo,concepto,usuario,obs,comprobante){const reg={ID_Pago:generarId('PAG','Pagos'),ID_Reserva:id,Fecha_Pago:fechaHoy(),Monto:Number(monto||0),Metodo_Pago:metodo||'Efectivo',Numero_Comprobante:comprobante||'',Concepto:concepto||'Pago',Estado:'Confirmado',Observaciones:obs||'',Usuario_Registro:usuario||'Sistema'};agregarRegistro('Pagos',reg);return json({ok:true,datos:reg});}
 function actualizarEstadoHabitacion(id,estado){actualizarPorId('Habitaciones','ID_Habitacion',id,{Estado:estado});}
 function crear(hoja,registro){agregarRegistro(hoja,registro);return json({ok:true,datos:registro});}
 function obtenerHoja(nombre){const h=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);if(!h)throw new Error('No existe la hoja '+nombre);return h;}
@@ -201,7 +236,14 @@ function agregarRegistro(nombre,r){const h=obtenerHoja(nombre),e=h.getRange(1,1,
 function buscarPorId(nombre,campo,id){return obtenerRegistros(nombre).find(x=>x[campo]===id);}
 function actualizarPorId(nombre,campo,id,cambios){const h=obtenerHoja(nombre),data=h.getDataRange().getValues(),headers=data[0],idx=headers.indexOf(campo);for(let i=1;i<data.length;i++){if(String(data[i][idx])===String(id)){Object.keys(cambios).forEach(k=>{if(cambios[k]!==undefined&&cambios[k]!==null&&cambios[k]!==''){const c=headers.indexOf(k);if(c>=0)h.getRange(i+1,c+1).setValue(cambios[k]);}});return json({ok:true,mensaje:'Actualizado'});}}throw new Error('Registro no encontrado');}
 function generarId(prefijo,nombre){const h=obtenerHoja(nombre),n=Math.max(1,h.getLastRow());let siguiente=1;if(n>1){const id=h.getRange(n,1).getDisplayValue(),m=id.match(/-(\d+)$/);if(m)siguiente=Number(m[1])+1;}return prefijo+'-'+String(siguiente).padStart(4,'0');}
-function validarReserva(d){if(!d.ID_Huesped||!d.ID_Habitacion||!d.Fecha_Entrada||!d.Fecha_Salida)throw new Error('Datos de reserva incompletos');const habitacion=buscarPorId('Habitaciones','ID_Habitacion',d.ID_Habitacion);if(!habitacion)throw new Error('Habitación no encontrada');if(String(habitacion.Activo||'Sí')==='No')throw new Error('La habitación está inactiva');if(['Limpieza','Mantenimiento','Fuera de servicio'].includes(String(habitacion.Estado||'')))throw new Error('La habitación no está disponible por su estado actual');const a=convertirFecha(d.Fecha_Entrada),b=convertirFecha(d.Fecha_Salida);if(b<=a)throw new Error('La salida debe ser posterior a la entrada');const choque=obtenerRegistros('Reservas').some(r=>r.ID_Habitacion===d.ID_Habitacion&&!['Cancelada','Finalizada'].includes(r.Estado)&&a<convertirFecha(r.Fecha_Salida)&&b>convertirFecha(r.Fecha_Entrada));if(choque)throw new Error('La habitación ya tiene una reserva en esas fechas');}
+function normalizarEstado(v){const x=String(v||'').trim().toLowerCase();if(['confirmada','pendiente','reservada'].includes(x))return 'Reservada';if(['ocupada','en curso','en_curso'].includes(x))return 'Ocupada';if(x==='finalizada')return 'Finalizada';if(x==='cancelada')return 'Cancelada';return String(v||'');}
+function recalcularEstadoHabitacion(id){
+  const h=buscarPorId('Habitaciones','ID_Habitacion',id);if(!h)return;
+  if(['Limpieza','Mantenimiento','Fuera de servicio','En alquiler'].includes(String(h.Estado||'')))return;
+  const ocupada=obtenerRegistros('Reservas').some(r=>r.ID_Habitacion===id&&normalizarEstado(r.Estado)==='Ocupada');
+  actualizarEstadoHabitacion(id,ocupada?'Ocupada':'Disponible');
+}
+function validarReserva(d){if(!d.ID_Huesped||!d.ID_Habitacion||!d.Fecha_Entrada||!d.Fecha_Salida)throw new Error('Datos de reserva incompletos');const habitacion=buscarPorId('Habitaciones','ID_Habitacion',d.ID_Habitacion);if(!habitacion)throw new Error('Habitación no encontrada');if(String(habitacion.Activo||'Sí')==='No')throw new Error('La habitación está inactiva');if(['Limpieza','Mantenimiento','Fuera de servicio','En alquiler'].includes(String(habitacion.Estado||'')))throw new Error('La habitación no está disponible por su estado actual');const a=convertirFecha(d.Fecha_Entrada),b=convertirFecha(d.Fecha_Salida);if(b<=a)throw new Error('La salida debe ser posterior a la entrada');const choque=obtenerRegistros('Reservas').some(r=>r.ID_Habitacion===d.ID_Habitacion&&!['Cancelada','Finalizada'].includes(normalizarEstado(r.Estado))&&a<convertirFecha(r.Fecha_Salida)&&b>convertirFecha(r.Fecha_Entrada));if(choque)throw new Error('La habitación ya tiene una reserva en esas fechas');}
 function convertirFecha(v){if(String(v).includes('-')){const p=String(v).split('-');return new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));}const p=String(v).split('/');return new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));}
 function calcularNoches(a,b){return Math.max(1,Math.ceil((convertirFecha(b)-convertirFecha(a))/86400000));}
 function fechaHoy(){return Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'dd/MM/yyyy');}
