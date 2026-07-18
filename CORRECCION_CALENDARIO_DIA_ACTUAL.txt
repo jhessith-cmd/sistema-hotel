@@ -1,0 +1,11 @@
+CORRECCIÓN SOLICITADA: CALENDARIO ABRE EN EL DÍA ACTUAL
+
+Se mantuvo exactamente la versión HotelControl-botones-ingreso-corregidos y únicamente se agregó:
+
+1. Al abrir Calendario, el desplazamiento horizontal se posiciona automáticamente en el día de hoy.
+2. El día actual queda resaltado en azul para identificarlo rápidamente.
+3. Al pulsar Hoy o volver al mes actual, el calendario vuelve a centrar el día presente.
+4. En otros meses, el calendario inicia en el día 1.
+5. Se conserva toda la funcionalidad anterior sin cambios.
+
+El comportamiento está pensado para una persona mayor: no necesita deslizar manualmente desde el día 1 hasta la fecha actual.
